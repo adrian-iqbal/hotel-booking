@@ -176,13 +176,14 @@ export const updateRoom = async (
 };
 
 export const createReserve = async (
-  roomId: string,
-  price: number,
-  startDate: Date,
-  endDate: Date,
   prevState: unknown,
   formData: FormData,
 ) => {
+  const roomId = formData.get("roomId") as string;
+  const price = Number(formData.get("price"));
+  const startDate = new Date(formData.get("startDate") as string);
+  const endDate = new Date(formData.get("endDate") as string);
+
   const session = await auth();
   if (!session || !session.user || !session.user.id)
     redirect(`/signin?redirect_url=room/${roomId}`);
@@ -209,18 +210,15 @@ export const createReserve = async (
   try {
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
-        data: {
-          name,
-          phone,
-        },
+        data: { name, phone },
         where: { id: session.user.id },
       });
       const reservation = await tx.reservation.create({
         data: {
-          startDate: startDate,
-          endDate: endDate,
-          price: price,
-          roomId: roomId,
+          startDate,
+          endDate,
+          price,
+          roomId,
           userId: session.user.id as string,
           payment: {
             create: {

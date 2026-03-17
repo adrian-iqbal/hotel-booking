@@ -17,30 +17,34 @@ const ReserveForm = ({
   const StartDate = new Date();
   const EndDate = addDays(StartDate, 1);
 
-  const [startDate, setStartDate] = useState(StartDate);
-  const [endDate, setEndDate] = useState(EndDate);
+  const [startDate, setStartDate] = useState<Date>(StartDate);
+  const [endDate, setEndDate] = useState<Date | null>(EndDate); // ✅ bisa null
 
   const handleDateChange = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
     setStartDate(start ?? startDate);
-    setEndDate(end ?? endDate);
+    setEndDate(end ?? null); // ✅ reset ke null saat user baru pilih start
   };
 
-  const [state, formAction, isPending] = useActionState(
-    createReserve.bind(null, room.id, room.price, startDate, endDate),
-    null,
-  );
+  const [state, formAction, isPending] = useActionState(createReserve, null);
 
-  const excludeDates = disabledDate.map((item) => {
-    return {
-      start: item.startDate,
-      end: item.endDate,
-    };
-  });
+  const excludeDates = disabledDate.map((item) => ({
+    start: item.startDate,
+    end: item.endDate,
+  }));
 
   return (
     <div>
       <form action={formAction}>
+        <input type="hidden" name="roomId" value={room.id} />
+        <input type="hidden" name="price" value={room.price} />
+        <input type="hidden" name="startDate" value={startDate.toISOString()} />
+        <input
+          type="hidden"
+          name="endDate"
+          value={endDate?.toISOString() ?? ""}
+        />{" "}
+        {/* ✅ handle null */}
         <div className="mb-4">
           <label className="block mb-2 text-sm font-md text-gray-900">
             Arrival - Departure
@@ -48,12 +52,12 @@ const ReserveForm = ({
           <DatePicker
             selected={startDate}
             startDate={startDate}
-            endDate={endDate}
+            endDate={endDate} // ✅ sekarang bisa null, datepicker akan reset highlight
             minDate={new Date()}
             selectsRange={true}
             onChange={handleDateChange}
             excludeDateIntervals={excludeDates}
-            dateFormat={"dd-MM-YYYY"}
+            dateFormat={"dd-MM-yyyy"}
             wrapperClassName="w-full"
             className="py-2 px-4 rounded-md border border-gray-300 w-full"
           />
@@ -94,9 +98,7 @@ const ReserveForm = ({
           disabled={isPending}
           className={clsx(
             "px-10 py-3 text-center font-semibold text-white w-full bg-orange-400 rounded-sm cursor-pointer hover:bg-orange-500",
-            {
-              "opacity-50 cursor-progress": isPending,
-            },
+            { "opacity-50 cursor-progress": isPending },
           )}
         >
           {isPending ? "Loading..." : "Reserve"}
